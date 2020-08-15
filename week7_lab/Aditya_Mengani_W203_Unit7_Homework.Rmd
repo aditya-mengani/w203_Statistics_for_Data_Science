@@ -1,0 +1,184 @@
+---
+title: "Aditya_Mengani_W203_Unit7_Homework"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+#####################################################################################################
+#####################################################################################################
+
+Load the data set into R workspace
+```{r}
+load("~/Downloads/unit_7_hw-master/gpa1.RData")
+```
+
+#####################################################################################################
+#####################################################################################################
+
+
+Problem 1.0 : Examine the skipped variable and argue whether or not a t-test is valid for this scenario. (3 points)
+
+Solution : There are 141 occurences of the skipped variable population. When we plot the distribution of the variable, it shows a skewed curve as below:
+```{r}
+hist(data$skipped, breaks = 12, col = "lightblue", border = "pink")
+```
+
+-We cannot determine with this distribution if T-test can be used. Instead, according to the assumptions of the T-test, when we do samples on the distribution, the sampling mean follows a normal distribution. 
+-We can use this assumption on the dataset and use CLT to prove that T-test is valid for this distribution, as it attains a normal distribution for large sample n > 30. Thus a T-test can be valid in this scenario.
+-Another assumption for a T-test would be, each observation of variable (skipped) should be independent of other observations. With out any information provided regarding the relationship of the variables it can be assumed that 'skipped' is iid random variable.
+-Third reason would be that the population variance is not mentioned,(if given a z-test would suffice but since population variance is not provided we use t-test)
+```{r}
+skipped <- data$skipped
+n3 <- 30
+draws3 <- replicate(10000,mean(sample(skipped,n3,replace=T)))
+hist(draws3,breaks=20,
+     main = "simulated sample means from repeated sampling",
+     xlab = "sample mean")
+```
+
+
+#####################################################################################################
+#####################################################################################################
+
+Problem 2.0: How would your answer to part a change if Mr. Lemmon selected dormitory rooms at random, then interviewed all occupants in the rooms he selected? (3 points)
+
+Solution : In problem 1.0, without any information provided we have assumed that the variable 'skipped' is iid. But, from problem 2.0, this assumption is not valid any more. Since, we are associating another variable 'dormitory rooms' and interviewing occupants in the room he selected. This could lead to a bias in the study. For example, the chance of students skipping in dorms could be lower, since they stay close to campus, or the chance of students skipping in dorms could be higher, due to the fact that one skipped person can influence other persons to skip. 
+Hence there is a dependency on the variables and that makes skipped no longer an independent variable. With this finding, my answer for part a would change. We will not be able to use t-test to accurately prove the hypotheses. The results of the test are not guaranteed to be correct, even though we might be able to experiment the dataset with t-test.
+
+#####################################################################################################
+#####################################################################################################
+Problem 3.0: Provide an argument for why you should choose a 2-tailed test in this instance, even if you are hoping to demonstrate that MSU students skip more than 1 lecture per week. (3 points)
+
+Solution : It is a rule of thumb to use 2-tail test as default when testing a hypotheses. The confidence interval derived for a 1-tail test are usually one sided. In our case, it will be a lower bound of 1.073426 and no upper bound.
+```{r,echo=FALSE}
+t.test(data$skipped,mu=1,alternative = "greater")
+```
+This shows that the lower bound CI 1.073426 is less than the sample mean of 1.078083, so the result is not statistically significant. If we might risk loosing any negative values.
+Instead if we use a 2-tail test, we can capture both positive and negative effects in 2-directions. Hence, it is recommended to use a 2-tail test.
+
+#####################################################################################################
+#####################################################################################################
+
+
+Problem 4.0: Conduct the t-test using the t.test function and interpret every component of the results. (3 points)
+The problem asks for testing whether MSU students skip over 1 lecture per week on average.
+So, my null hypotheses would be H0 = 1 and HA > 1
+I will create a sample of 1000 values from a population and run the t.test on it.
+
+Running the t.test gives below results. The p-value does not fall in the rejection region(0.05), hence null hypotheses holds true. Note: the CI for upper bound is infinity and CI (1.073426) for lower which is less than sample mean 1.078083
+```{r,echo=FALSE}
+n3 <- 141
+draws3 <- replicate(1000,mean(sample(skipped,n3,replace=T)))
+t.test(draws3,mu=1,alternative = "greater")
+```
+One Sample t-test
+
+data:  draws3
+t = 27.6, df = 999, p-value < 2.2e-16
+alternative hypothesis: true mean is greater than 1
+95 percent confidence interval:
+ 1.073426      Inf
+sample estimates:
+mean of x 
+ 1.078083
+
+Step 3: Now I conduct a two tail test with mu = 1
+```{r,echo=FALSE}
+t.test(draws3,mu=1,alternative =  "two.sided")
+```
+One Sample t-test
+
+data:  draws3
+t = 27.6, df = 999, p-value < 2.2e-16
+alternative hypothesis: true mean is not equal to 1
+95 percent confidence interval:
+ 1.072532 1.083635
+sample estimates:
+mean of x 
+ 1.078083 
+ 
+ Hence from above findings, p-value is < 0.05 significance value and hence, we can reject null hypotheses
+ and accept the alteranate hypotheses that true mean is greater than 1
+
+
+#####################################################################################################
+#####################################################################################################
+
+
+Problem 5.0: Show how you would compute the t-statistic and p-value manually (without using t.test), using the pt function in R. (3 points)
+
+Assume hypotheses H0 =1 hence mu3 = 1
+```{r}
+mu3 <-  1
+sd3 <- sd(draws3)
+#calculate tscore
+tscore <- (mean(draws3) - mu3)/(sqrt(sd(draws3)^2/1000))
+# tscore = 27.59992
+
+#calculate p-value
+pobserved = 2*pt(-abs(tscore), df=999)
+# 4.362295e-125
+```
+
+The calculated t-score is 27.59992 which is very close to t = 27.6 calculated by t.test
+The calculated p-score is 4.362295e-125 which is approx. to the p-value < 2.2e-16 calculated by t-test
+
+Thus we  can reject null hypotheses mu = 1.
+
+
+#####################################################################################################
+#####################################################################################################
+
+
+Problem 6.0: Construct a 99% confidence interval for the mean number classes skipped by MSU students in a week. (3 points)
+
+Manual calculation :
+To calculate the 99% CI, I will be using the textbook definition for generating confidence bound:
+
+Let x and s be the sample mean and sample standard deviation computed from the results of a random sample from a normal population with mean m.
+
+Lower bound : sample mean(x)-t(critical_value)*(s/sqrt(n))
+Upper bound : sample mean(x)+t(critical_value)*(s/sqrt(n))
+
+
+100(1-alpha)% = 99;
+sample-mean(data$skipped) = 1.076241;
+alpha = 0.01 ; alpha/2 = 0.005;
+df = 140 (where n = 141, df = n-1);
+sd(data$skipped) = 1.088882;
+sqrt(n) = 11.83216;
+
+t_critical_value(alpha/2,140) = t_critical_value(0.005,140) = approx(2.576,2.617) = 2.6 (from appendix A-5 in textbook)
+
+Lower bound : 1.076241 - 2.6*(1.088882/11.83216) = 1.07 - 0.239271 = 0.830729
+Upper bound : 1.076241 + 2.6*(1.088882/11.83216) = 1.07 + 0.239271 = 1.309271
+
+Thus we estimate mean, mu of the population is between (0.830729, 1.309271)
+
+Using R:
+The same can be programatically, implemented using the below functions:
+c(xbar - qt( 0.995, 140) * s / sqrt(140), xbar + qt( 0.995, 140) * s / sqrt(141))
+gives a confidence interval of 0.8359208 1.3157078
+This matches very closes to the manual calculation earlier
+
+
+#####################################################################################################
+#####################################################################################################
+
+
+Problem 7.0: Can you say that there is a 99% chance the population mean falls inside your confidence interval? (3 points)
+A confidence interval is an interval estimate, showing entire plausible values for sample mean to be close to population mean. A CI with 99% confidence level has lower limit as 0.8359208 and upper limit as 1.309271. So, any value between  0.8359208 and 1.309271 is plausible for population mean. It means 99% of all the samples would be in the interval that includes population mean. Only 1% chance of not getting in the confidence interval. The higher the percentage the strong chance that the value of population mean lies within the interval.
+Hence we can say that there is a 99% chance the population mean falls inside the CI
+
+
+#####################################################################################################
+#####################################################################################################
